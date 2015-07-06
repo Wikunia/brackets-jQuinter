@@ -8,7 +8,11 @@ define(function () {
         var ProjectManager      = brackets.getModule("project/ProjectManager");
         var DocumentManager     = brackets.getModule("document/DocumentManager");
         var EditorManager       = brackets.getModule("editor/EditorManager");
+        var MainViewManager     = brackets.getModule("view/MainViewManager");
 
+        var REGEX_HASHINT_CSS_ID    = /^[\t ]*\#/;
+        var REGEX_HASHINT_CSS_CLASS = /^[\t ]*\./;
+        
         var REGEX_HTML_CLASS    = / class="([^"]+)"/ig;
         var REGEX_HTML_ID       = / id="([^"]+)"/ig;
         var REGEX_CSS_CLASS     = /\.(-?[_a-zA-Z]+[_a-zA-Z0-9-]*)/ig;
@@ -25,13 +29,13 @@ define(function () {
         var SUFFIXES            = {'data-': '="++"'};
     
         var HTML_HINT_ATTR      = ["id","class","data-"];
-        var JS_HINT_ATTR        = ["id","class","data","hasClass","removeClass"];
+        var JS_HINT_ATTR        = ["id","class","data","hasClass","removeClass","addClass"];
     
         var HTML_HTML_REGEX     = {'class': REGEX_HTML_CLASS, 'id': REGEX_HTML_ID, 'data-': REGEX_DATA};
         var HTML_CSS_REGEX      = {'class': REGEX_CSS_CLASS, 'id': REGEX_CSS_ID};
         var JCSS__REGEX         = {'class': REGEX_HTML_CLASS, 'id': REGEX_HTML_ID, 'data': REGEX_DATA};
     
-        var ATTR_REDIRECT       = {'hasClass': "class",'removeClass': "class",'removeData': 'data'};
+        var ATTR_REDIRECT       = {'addClass': "class", 'hasClass': "class",'removeClass': "class",'removeData': 'data'};
         
         /** 
  	 	 * reverse a string 
@@ -67,7 +71,7 @@ define(function () {
                 .done(function (files) { 
                     PerfUtils.addMeasurement(timerName); 
                     for(var i = 0; i < files.length; i++) {
-                        console.log(files[i]);
+                        // console.log(files[i]);
                     }
                     result.resolve(files);
                 }) 
@@ -89,17 +93,17 @@ define(function () {
             var result = new $.Deferred();    
             var index = 0;
             var hints = [];
-            console.log('getHintsForFiles: ',files);
+            // console.log('getHintsForFiles: ',files);
             getHintsForFilesRec(index)
                 .done(function() {
-                    console.log('hints:', hints);
+                    // console.log('hints:', hints);
                     hints = hints.getUnique(0);
                     hints.sort(function(a, b){
                         var a1= a[1], b1= b[1];
                         if(a1== b1) return 0;
                         return a1> b1? 1: -1;
                     });
-                    console.log('getHintsForSingleFile hints:', hints);
+                    // console.log('getHintsForSingleFile hints:', hints);
                 
                     // use only the first column of hints (the name)
                     var hintsFirstColumn= [];
@@ -117,7 +121,7 @@ define(function () {
                 var resultRec = new $.Deferred();    
                 clInst.getHintsForSingleFile(files[index])
                 .done(function(hintsForSingleFile) {
-                    console.log('hintsForSingleFile:', hintsForSingleFile);
+                    // console.log('hintsForSingleFile:', hintsForSingleFile);
                     // extend
                     Array.prototype.push.apply(hints,hintsForSingleFile);
                     if (index+1 < files.length) {
@@ -142,7 +146,7 @@ define(function () {
          * @returns {DeferredArray} an array with all hints
          */
         JQueryHinter.prototype.getHintsForSingleFile = function (file) {
-            console.log('hintsForSingleFile FilePath: ',file._path);
+            // console.log('hintsForSingleFile FilePath: ',file._path);
             var fileExt = file._name.split('.').pop();
             switch (fileExt) {
                 case "htm":
@@ -155,20 +159,20 @@ define(function () {
             var hRegex;
             var clInst = this;
             var hints = [];
-            console.log('this.match:', clInst.match);
-            console.log('this.language:', clInst.language);
-            console.log('fileExt:', fileExt);
+            // console.log('this.match:', clInst.match);
+            // console.log('this.language:', clInst.language);
+            // console.log('fileExt:', fileExt);
             if (HTML_LANGUAGES.indexOf(clInst.language) >= 0) {  
-                console.log('html languages: ', HTML_LANGUAGES);
+                // console.log('html languages: ', HTML_LANGUAGES);
                 if (HTML_LANGUAGES.indexOf(fileExt) >= 0) {   
-                    console.log('fileext is html');
+                    // console.log('fileext is html');
                     if (clInst.attr in HTML_HTML_REGEX) {
                         hRegex = HTML_HTML_REGEX[clInst.attr];
                     }          
                 } else if (CSS_LANGUAGES.indexOf(fileExt) >= 0) {   
-                    console.log('CSS');
+                    // console.log('CSS');
                     if (clInst.attr in HTML_CSS_REGEX) {
-                        console.log('CSS 2');
+                        // console.log('CSS 2');
                         hRegex = HTML_CSS_REGEX[clInst.attr];
                     }
                 }
@@ -178,7 +182,7 @@ define(function () {
                     // setCursor will remove ++ and set the cursor at that position
                     this.setFixes('',' {\n\t++\n}');
                 }                    
-                console.log('clInst.attr: ',clInst.attr);
+                // console.log('clInst.attr: ',clInst.attr);
                 if (clInst.attr in JCSS__REGEX) {
                     hRegex = JCSS__REGEX[clInst.attr];
                 }                
@@ -189,14 +193,14 @@ define(function () {
                 DocumentManager.getDocumentText(file)
                     .done(function(doc) {
                         var regMatch;
-                        console.log('hRegex: ',hRegex);
+                        // console.log('hRegex: ',hRegex);
                         while ((regMatch = hRegex.exec(doc)) !== null) {
                             var splittedRegMatches = regMatch[1].split(' ');
                             for (var i = 0; i < splittedRegMatches.length; i++) {
                                 var splittedRegMatch = clInst.prefixHint+splittedRegMatches[i];
                                 var matchPos = splittedRegMatch.indexOf(clInst.match);
-//                                console.log('splittedRegMatch: ',splittedRegMatch);
-//                                console.log('matchPos: ',matchPos);
+//                                // console.log('splittedRegMatch: ',splittedRegMatch);
+//                                // console.log('matchPos: ',matchPos);
                                 if (matchPos >= 0) {
                                     hints.push([splittedRegMatch,matchPos]);
                                 }
@@ -244,18 +248,18 @@ define(function () {
             var attr;
             var line = this.editor.document.getRange({line:this.pos.line,ch:0},this.pos); 
             var lineRev = reverse_str(line);
-            console.log('this.language: ',this.language);
+            // console.log('this.language: ',this.language);
             if (HTML_LANGUAGES.indexOf(this.language) >= 0) {    
                 var match = lineRev.match(/^[^="]+"=/);
-                console.log('lineRev: ',lineRev);
-                console.log('match: ',match);
+                // console.log('lineRev: ',lineRev);
+                // console.log('match: ',match);
                 if (match) {
                     lineRev = lineRev.substr(match[0].length);   
                     this.noFixes = true;
                 }
 
                 attr = reverse_str(lineRev.split(" ")[0]);
-                console.log('attr: ', attr);
+                // console.log('attr: ', attr);
                 var last2Char = attr.substr(-2);
                 if (last2Char != '="' && last2Char != "='" && QUOTED_ATTR.indexOf(attr) >= 0) {                    
                     this.setFixes('="','"');
@@ -263,7 +267,7 @@ define(function () {
                     attr = attr.substr(0,attr.length-2);
                 }            
             } else if (JS_LANGUAGES.indexOf(this.language) >= 0) {    
-                console.log('lineRev: ',lineRev);    
+                // console.log('lineRev: ',lineRev);    
                 // substr(2) because we don't want the '( 
                 attr = reverse_str(lineRev.split(".")[0].substr(2));
             }
@@ -293,7 +297,7 @@ define(function () {
             } else {
                 suffix = SUFFIXES[attr];   
             } 
-            console.log('checkFixes for: '+attr+' => '+prefix+'! !'+suffix);
+            // console.log('checkFixes for: '+attr+' => '+prefix+'! !'+suffix);
             
             this.setFixes(prefix,suffix);
         }
@@ -332,7 +336,7 @@ define(function () {
             this.noFixes    = false;
             
             this.implicitChar = implicitChar;
-//            console.log('this.implicitChar: ',this.implicitChar);
+//            // console.log('this.implicitChar: ',this.implicitChar);
             
             if (HTML_LANGUAGES.indexOf(this.language) >= 0) {
                 this.fileTypes = this.HTNL_AND_CSS_LANGUAGES;
@@ -341,7 +345,7 @@ define(function () {
                 
                 if (!this.implicitChar || lastChars.indexOf(this.implicitChar) >= 0) {
                     var attr = this.getCurrentAttr();
-                    console.log('attr: ',attr);
+                    // console.log('attr: ',attr);
                     if (attributes.indexOf(attr) >= 0) {
                         this.attr = attr;
                         return true;
@@ -353,15 +357,31 @@ define(function () {
                 if (this.implicitChar == "'" || this.implicitChar == '"') {
                     var attributes = JS_HINT_ATTR;
                     var attr = this.getCurrentAttr();
-                    console.log('attr: ',attr);
+                    // console.log('attr: ',attr);
                     if (attributes.indexOf(attr) >= 0) {
                         this.attr = attr;
                         return true;   
                     }
                 } else if (this.implicitChar == '.' || this.implicitChar == '#') {
+                    // console.log('hier!!');
+                    // console.log('implicitChar: '+this.implicitChar);
                     if (this.implicitChar == '.') {
+                        if (CSS_LANGUAGES.indexOf(this.language) >= 0) {
+                            var line = this.editor.document.getLine(this.pos.line); 
+                            // console.log('line: '+line);
+                            // console.log(line.match(REGEX_HASHINT_CSS_CLASS));
+                            if (!line.match(REGEX_HASHINT_CSS_CLASS)) {
+                                return false;
+                            }                                
+                        }
                         this.attr = 'class';   
                     } else if (this.implicitChar == '#') {
+                        if (CSS_LANGUAGES.indexOf(this.language) >= 0) {
+                            var line = this.editor.document.getLine(this.pos.line); 
+                            if (!line.match(REGEX_HASHINT_CSS_ID)) {
+                                return false;
+                            }                                
+                        }
                         this.attr = 'id';   
                     }
                     return true;   
@@ -377,21 +397,21 @@ define(function () {
          * @returns {Object} HinterObject
          */
         JQueryHinter.prototype.getHints = function () {
-            console.log('this.pos:', this.pos);
-            console.log('this.editor.getCursorPos:', this.editor.getCursorPos());
+            // console.log('this.pos:', this.pos);
+            // console.log('this.editor.getCursorPos:', this.editor.getCursorPos());
             if (this.pos.ch > this.editor.getCursorPos().ch) {
                 return false;   
             }
             
             this.match = this.editor.document.getRange(this.pos, this.editor.getCursorPos());
-            console.log('getHints');
+            // console.log('getHints');
             var clInst = this;
             var result = $.Deferred();
             getAllFilesByFileTypes(clInst.fileTypes)
                 .done(function(files) {
                     clInst.getHintsForFiles(files)
                         .done(function (defHints) {
-                            console.log('defHints:', defHints);
+                            // console.log('defHints:', defHints);
                             result.resolve({
                                 hints: defHints,
                                 match: this.match,
@@ -430,7 +450,7 @@ define(function () {
                 var startSetCursor, endSetCursor;
                 while (i < 5) {
                     line = this.editor.document.getLine(start.line+i);
-                    console.log('line: ',line);
+                    // console.log('line: ',line);
                     match = line.indexOf('++');
                     if (match >= 0) {
                         startSetCursor = {line: start.line+i, ch: match};
@@ -441,7 +461,7 @@ define(function () {
                 }
                 currentDoc.replaceRange('', startSetCursor, endSetCursor);
                 // Set focus on editor. 
-                EditorManager.focusEditor(); 
+                MainViewManager.focusActivePane()
                 EditorManager.getCurrentFullEditor().setCursorPos( 
  	 		           startSetCursor.line, 
  	 		           startSetCursor.ch);
