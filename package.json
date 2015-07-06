@@ -5,7 +5,7 @@
     "homepage": "https://github.com/Wikunia/brackets-jQuinter",
     "version": "0.1.0",
     "author": "Ole Kröger <o.kroeger@wikunia.de>",
-    "license": "Creative Commons v3.0",
+    "license": "MIT License (MIT)",
     "engines": {
         "brackets": ">=0.20.0"
     }
