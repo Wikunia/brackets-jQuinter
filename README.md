@@ -6,15 +6,15 @@ A brackets extension to get hints for selectors in jQuery,HTML and CSS.
 
 in jQuery:
 
-![](https://cloud.githubusercontent.com/assets/4931746/8520595/01389176-23dc-11e5-8feb-2a490fa69366.gif)
+![](https://cloud.githubusercontent.com/assets/4931746/8521140/3fdace8a-23e1-11e5-85d6-72b378f1894f.gif)
 
 in HTML:
 
-![](https://cloud.githubusercontent.com/assets/4931746/8520879/b76ce2ce-23de-11e5-9277-283a771cdf93.gif)
+![](https://cloud.githubusercontent.com/assets/4931746/8521128/1226964a-23e1-11e5-80f2-eec705b7cee8.gif)
 
 in CSS:
 
-![](https://cloud.githubusercontent.com/assets/4931746/8520909/117d693c-23df-11e5-9a80-aba172ad2e56.gif)
+![](https://cloud.githubusercontent.com/assets/4931746/8521065/8953f89e-23e0-11e5-8ea9-03f2d2b07ad1.gif)
 
 
 ## You're rich?
