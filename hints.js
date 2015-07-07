@@ -20,7 +20,7 @@ define(function () {
         var REGEX_DATA          = / data-([_a-zA-Z]+[_a-zA-Z0-9-]*)/ig;
     
         var JS_LANGUAGES        = ["javascript", "coffeescript", "livescript"];
-        var CSS_LANGUAGES       = ["css", "less", "sass"];
+        var CSS_LANGUAGES       = ["css", "less", "sass", "scss"];
         var HTML_LANGUAGES      = ["html","mustache"];
     
         var QUOTED_ATTR         = ["id","class"];
@@ -151,7 +151,7 @@ define(function () {
             switch (fileExt) {
                 case "htm":
                     fileExt = "html";
-                    break                    
+                    break   
             }
             
         

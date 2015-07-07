@@ -38,7 +38,7 @@ define(function (require, exports, module) {
         
 		var jqueryHinter = new JQueryHinter();
 
-		CodeHintManager.registerHintProvider(jqueryHinter, ["javascript", "coffeescript", "livescript", "css", "less", "sass", "html"], 0);
+		CodeHintManager.registerHintProvider(jqueryHinter, ["javascript", "coffeescript", "livescript", "css", "less", "sass", "scss", "html", "mustache"], 0);
 	});
 
 
