@@ -37,7 +37,6 @@ define(function (require, exports, module) {
     var jqueryHinter;
     
     function fileSavedHandler($event, listener) {
-        console.log('listener: ',listener.file);
         jqueryHinter.updateFile(listener.file);
     }
     
