@@ -28,8 +28,10 @@ define(function () {
 
         var QUOTED_ATTR         = ["id","class"];
 
-        var PREFIXES            = {};
-        var SUFFIXES            = {'data-': '="++"'};
+        var PREFIXES            = {'html_imp': {'id': '="','class': '="'}};
+        var SUFFIXES            = {'html_imp': {'data-': '="++"'},
+                                   'html_exp': {'data-': '="++"'},
+                                   'css': {'id': ' {\n\t++\n}','class': ' {\n\t++\n}'}};
 
         var HTML_HINT_ATTR      = ["id","class","data-"];
         var JS_HINT_ATTR        = ["id","class","data","hasClass","removeClass","addClass"];
@@ -68,6 +70,13 @@ define(function () {
             console.log('this.REGEX_CSS: ',this.REGEX_CSS);
             console.log('this.REGEX_2_CLASS: ',this.REGEX_2_CLASS);
             
+            this.reverseLanguage = {};
+            for(var key in LANGUAGES) {
+                for (var i = 0; i < LANGUAGES[key].length; i++) {
+                    this.reverseLanguage[LANGUAGES[key][i]] = key;
+                }
+            }
+            console.log('reverseLanguage: ',this.reverseLanguage);
             
             this.match = '';
             this.allHints = {};
@@ -108,29 +117,16 @@ define(function () {
                         for (var i = 0; i < hintKeys.length; i++) {
                             hintKey = hintKeys[i];
                             cHints = defHints[hintKey];
-                            cHints = cHints.getUnique(0);
-                             // sort by match pos
-                            cHints.sort(byMatch);
-                            // use only the first column of hints (the name)
-                            var hintsFirstColumn= [];
-                            for (var i = 0; i < cHints.length; i++) {
-                                hintsFirstColumn.push(cHints[i][0].substr(clInst.prefixHint.length));
-                            }
-                            defHints[hintKey] = hintsFirstColumn;
+                            cHints = cHints.getUnique();
+                            defHints[hintKey] = cHints;
                         }
 
-                        this.allHints = defHints;
+                        clInst.allHints = defHints;
                     });
             });
 
         }
-
-        function byMatch(a,b) {
-            var a1= a[1], b1= b[1];
-            if(a1== b1) return 0;
-            return a1> b1? 1: -1;
-        }
-                  
+              
                   
         /**
          * return all html files in the current project
@@ -186,9 +182,9 @@ define(function () {
                 var resultRec = new $.Deferred();
                 clInst.getHintsForSingleFile(files[index],language)
                 .done(function(hintsForSingleFile) {
-                    console.log('hintsForSingleFile: ',hintsForSingleFile);
+//                    console.log('hintsForSingleFile: ',hintsForSingleFile);
                     hints = hintExtend(hints,hintsForSingleFile);
-                    console.log(hints);
+//                    console.log(hints);
                     if (index+1 < files.length) {
                         getHintsForFilesRec(index+1,hintsForSingleFile)
                             .done(function() {
@@ -255,18 +251,15 @@ define(function () {
                             var splittedRegMatches = regMatch[typeID].split(' ');
                             for (var i = 0; i < splittedRegMatches.length; i++) {
                                 var splittedRegMatch = clInst.prefixHint+splittedRegMatches[i];
-                                var matchPos = splittedRegMatch.indexOf(clInst.match);
-                                if (matchPos >= 0) {
-                                    if (type == "HTML_CLASS" || type == "CSS_CLASS") {
-                                        console.log(type);   
-                                        console.log(splittedRegMatch);   
-                                        console.log();   
-                                    }
-                                    if (!hints[lang+"_"+type]) {
-                                        hints[lang+"_"+type] = [];
-                                    } 
-                                    hints[lang+"_"+type].push([splittedRegMatch,matchPos]);
+                                if (type == "HTML_CLASS" || type == "CSS_CLASS") {
+                                    console.log(type);   
+                                    console.log(splittedRegMatch);   
+                                    console.log();   
                                 }
+                                if (!hints[type]) {
+                                    hints[type] = [];
+                                } 
+                                hints[type].push(splittedRegMatch);
                             }
                         }
 
@@ -283,7 +276,7 @@ define(function () {
 
         function hintExtend(hints,arr){
             var arrKeys = Object.keys(arr);
-            console.log('arrKeys: ',arrKeys);
+//            console.log('arrKeys: ',arrKeys);
             var arrKey;
             for (var i = 0; i < arrKeys.length; i++) {
                 arrKey = arrKeys[i];   
@@ -344,38 +337,51 @@ define(function () {
                 } else if (QUOTED_ATTR.indexOf(attr.substr(0,attr.length-2)) >= 0) {
                     attr = attr.substr(0,attr.length-2);
                 }
-            } else if (LANGUAGES.js.indexOf(this.language) >= 0) {
+            } else if (LANGUAGES.javascript.indexOf(this.language) >= 0) {
                 // console.log('lineRev: ',lineRev);
                 // substr(2) because we don't want the '(
                 attr = reverse_str(lineRev.split(".")[0].substr(2));
             }
 
-            this.checkFixes(attr);
 
             if (attr in ATTR_REDIRECT) {
                 attr = ATTR_REDIRECT[attr];
             }
+            console.log('checkFixes for attr: '+attr);
+            this.checkFixes(attr);
 
             return attr;
         }
 
+        
         /**
          * Check if it's possible to add fixes
          * + data-... should add an ="++" as suffix
          * @param {String} attr attribute like 'class' or 'data-'
          */
         JQueryHinter.prototype.checkFixes = function (attr) {
-            if (!(attr in PREFIXES)) {
+            var prefix, suffix;
+            
+            var langReversed = this.reverseLanguage[this.language];
+            if (langReversed == "html") {
+                if (!this.implicitChar) {
+                    langReversed += "_exp";   
+                } else {
+                    langReversed += "_imp";   
+                }
+            }
+            
+            if (!(langReversed in PREFIXES) || !(attr in PREFIXES[langReversed])) {
                 prefix = '';
             } else {
-                prefix = PREFIXES[attr];
+                prefix = PREFIXES[langReversed][attr];
             }
-            if (!(attr in SUFFIXES)) {
+            if (!(langReversed in SUFFIXES) || !(attr in SUFFIXES[langReversed])) {
                 suffix = '';
             } else {
-                suffix = SUFFIXES[attr];
+                suffix = SUFFIXES[langReversed][attr];
             }
-            // console.log('checkFixes for: '+attr+' => '+prefix+'! !'+suffix);
+            console.log('checkFixes for: !'+attr+'! => !'+prefix+'! !'+suffix);
 
             this.setFixes(prefix,suffix);
         }
@@ -441,18 +447,15 @@ define(function () {
                         return true;
                     }
                 } else if (this.implicitChar == '.' || this.implicitChar == '#') {
-                    // console.log('hier!!');
-                    // console.log('implicitChar: '+this.implicitChar);
                     if (this.implicitChar == '.') {
                         if (LANGUAGES.css.indexOf(this.language) >= 0) {
                             var line = this.editor.document.getLine(this.pos.line);
-                            // console.log('line: '+line);
-                            // console.log(line.match(REGEX_HASHINT_CSS_CLASS));
                             if (!line.match(REGEX_HASHINT_CSS_CLASS)) {
                                 return false;
                             }
                         }
                         this.attr = 'class';
+                        this.checkFixes(this.attr);
                     } else if (this.implicitChar == '#') {
                         if (LANGUAGES.css.indexOf(this.language) >= 0) {
                             var line = this.editor.document.getLine(this.pos.line);
@@ -461,6 +464,7 @@ define(function () {
                             }
                         }
                         this.attr = 'id';
+                        this.checkFixes(this.attr);
                     }
                     return true;
                 }
@@ -480,28 +484,84 @@ define(function () {
             if (this.pos.ch > this.editor.getCursorPos().ch) {
                 return false;
             }
+            var clInst = this;
+            var result = $.Deferred();
+            this.match = this.editor.document.getRange(this.pos, this.editor.getCursorPos());
 
             console.log('allHints: ',this.allHints);
             console.log('fileTypesName: ',this.fileTypes[0]);
             console.log('language: ',this.language);
+            console.log('attr: ',this.attr);
+            console.log('prefixHint: ',this.prefixHint);
+            console.log('suffixHint: ',this.suffixHint);
 
-            this.match = this.editor.document.getRange(this.pos, this.editor.getCursorPos());
+            var allHintsKey = this.attr.toUpperCase();
+            if (allHintsKey == "DATA-") {
+                allHintsKey = "DATA";  
+            }
+            
             // console.log('getHints');
             console.time('getHints');
-            var clInst = this;
-            var result = $.Deferred();
-            console.log('allHints for fileTypesName', clInst.allHints[clInst.fileTypes[0]]);
-            var defHints = clInst.allHints[clInst.fileTypes[0]][clInst.language];
+            var defHints = clInst.allHints[allHintsKey];
+            defHints = this.getMatchingHints(defHints);
+            console.timeEnd('getHints');
+            if (!defHints || defHints.length == 0) {
+                return false;   
+            }
             console.log('defHints: ',defHints);
             var result = {  hints: defHints,
                             match: this.match,
                             selectInitial: true,
                             handleWideResults: false
             };
-
             return result;
         };
-
+    
+        
+        /**
+         * Sort out hints that don't match this.match
+         * @param {Array} hints all hints
+         */
+        JQueryHinter.prototype.getMatchingHints = function (hints) {
+            if (this.match == '') {
+                return hints;   
+            }
+            var cHint;
+            var returnHints = [];
+            var matchPos;
+            var matchWOPrefix = this.removePrefix();
+            console.log('matchWOPrefix: '+matchWOPrefix);
+            for (var i = 0; i < hints.length; i++) {
+                cHint = hints[i];
+                
+                if ((matchPos = cHint.indexOf(matchWOPrefix)) >= 0) {
+                    returnHints.push([cHint,matchPos]);
+                }
+            }
+            returnHints.sort(byMatch);
+            
+            return returnHints.getCol(0);
+        }
+    
+        JQueryHinter.prototype.removePrefix = function () {
+            return this.match.substr(this.prefixHint.length);
+        }
+        
+        function byMatch(a,b) {
+            var a1= a[1], b1= b[1];
+            if(a1== b1) return 0;
+            return a1> b1? 1: -1;
+        }
+        
+        
+        Array.prototype.getCol = function (col){
+           var column = [];
+           for(var i=0; i< this.length; i++){
+              column.push(this[i][col]);
+           }
+           return column;
+        }
+        
         /**
          * Inserts the hint
          */
