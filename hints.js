@@ -62,13 +62,9 @@ define(function () {
             for (var i = 0; i < file_types.length; i++) {
                 Array.prototype.push.apply(this.READ_FILES,LANGUAGES[file_types[i]]);
             }
-            console.log(this.READ_FILES);
             this.REGEX_HTML = new RegExp(REGEX_HTML_ID.source+"|"+REGEX_HTML_CLASS.source+"|"+REGEX_DATA.source,'ig');
             this.REGEX_CSS  = new RegExp(REGEX_CSS_ID.source+"|"+REGEX_CSS_CLASS.source,'ig');
             this.REGEX_2_CLASS = {'HTML': ["ID","CLASS","DATA"],'CSS': ["ID","CLASS"]};
-            console.log('this.REGEX_HTML: ',this.REGEX_HTML);
-            console.log('this.REGEX_CSS: ',this.REGEX_CSS);
-            console.log('this.REGEX_2_CLASS: ',this.REGEX_2_CLASS);
             
             this.reverseLanguage = {};
             for(var key in LANGUAGES) {
@@ -76,7 +72,6 @@ define(function () {
                     this.reverseLanguage[LANGUAGES[key][i]] = key;
                 }
             }
-            console.log('reverseLanguage: ',this.reverseLanguage);
             
             this.match = '';
             this.allHints = {};
@@ -95,9 +90,7 @@ define(function () {
         JQueryHinter.prototype.fillCache = function (fileType) {
             fileType = typeof fileType !== "undefined" ? fileType : false;
 
-            console.log('fileType: ',fileType);
             var languageKeys = Object.keys(LANGUAGES);
-            console.log('languageKeys: ',languageKeys);
             var supportedFileTypeCats;
             if (fileType === false) {
                 supportedFileTypeCats = Object.keys(LANGUAGES);
@@ -136,7 +129,7 @@ define(function () {
                 .done(function (files) {
                     PerfUtils.addMeasurement(timerName);
                     for(var i = 0; i < files.length; i++) {
-                        // console.log(files[i]);
+                        
                     }
                     result.resolve(files);
                 })
@@ -158,7 +151,7 @@ define(function () {
             var result = new $.Deferred();
             var index = 0;
             var hints = {};
-            // console.log('getHintsForFiles: ',files);
+            
             getHintsForFilesRec(index)
                 .done(function() {                
                     result.resolve(hints);
@@ -172,9 +165,9 @@ define(function () {
                 var resultRec = new $.Deferred();
                 clInst.getHintsForSingleFile(files[index])
                 .done(function(hintsForSingleFile) {
-//                    console.log('hintsForSingleFile: ',hintsForSingleFile);
+
                     hints = hintExtend(hints,hintsForSingleFile);
-//                    console.log(hints);
+
                     if (index+1 < files.length) {
                         getHintsForFilesRec(index+1)
                             .done(function() {
@@ -225,7 +218,7 @@ define(function () {
               if (go) {
                 DocumentManager.getDocumentText(file)
                     .done(function(doc) {
-//                          console.log(hRegex);
+
                         var regMath = null;
                         while ((regMatch = hRegex.exec(doc)) !== null) {
                             var type;
@@ -237,15 +230,10 @@ define(function () {
                                     break;
                                 }
                             }
-//                            console.log('typeID: '+typeID);
+
                             var splittedRegMatches = regMatch[typeID].split(' ');
                             for (var i = 0; i < splittedRegMatches.length; i++) {
                                 var splittedRegMatch = clInst.prefixHint+splittedRegMatches[i];
-                                if (type == "HTML_CLASS" || type == "CSS_CLASS") {
-                                    console.log(type);   
-                                    console.log(splittedRegMatch);   
-                                    console.log();   
-                                }
                                 if (!hints[type]) {
                                     hints[type] = [];
                                 } 
@@ -264,9 +252,15 @@ define(function () {
             return result.promise();
         }
 
+        /**
+         * extend the hints using arr
+         * @param   {Object} hints the old hints
+         * @param   {Object} arr   new hints that will extend the old ones
+         * @returns {Object} the combined hints
+         */
         function hintExtend(hints,arr){
             var arrKeys = Object.keys(arr);
-//            console.log('arrKeys: ',arrKeys);
+
             var arrKey;
             for (var i = 0; i < arrKeys.length; i++) {
                 arrKey = arrKeys[i];   
@@ -278,6 +272,11 @@ define(function () {
             return hints;
         }
         
+        /**
+         * Get unique elements in an array using the column index
+         * @param   {Number} [index=false] index of the column that should be unique (not set => unique in total)
+         * @returns {Array}  array where the elements in the defined index are unique
+         */
         Array.prototype.getUnique = function(index){
             index = typeof(index) === "undefined" ? false : index;
             var u = {}, a = [];
@@ -301,6 +300,10 @@ define(function () {
             return a;
         }
 
+        /**
+         * update the hints using a single file
+         * @param {Object} file Brackets file object
+         */
         JQueryHinter.prototype.updateFile = function (file) {
             var clInst = this;
             var fileExt = file._name.split('.').pop();
@@ -311,15 +314,21 @@ define(function () {
             }
             
             if (this.READ_FILES.indexOf(fileExt) >= 0) {
+//                console.time('updateFile');
                 clInst.getHintsForSingleFile(file)
                 .done(function(hints) {
                     hints = hintExtend(clInst.allHints,hints);
                     clInst.updateHints(hints);
-                    console.log('updated: ',clInst.allHints);
+//                    console.log('updated: ',clInst.allHints);
+//                    console.timeEnd('updateFile');
                 });
             }
         }
         
+        /**
+         * Update the hints (this.allHints) using the new hints hints
+         * @param {Array} hints new hints
+         */
         JQueryHinter.prototype.updateHints = function (hints) {
             var clInst = this;
             var hintKeys = Object.keys(hints);
@@ -342,19 +351,21 @@ define(function () {
         JQueryHinter.prototype.getCurrentAttr = function () {
             var attr;
             var line = this.editor.document.getRange({line:this.pos.line,ch:0},this.pos);
-            var lineRev = reverse_str(line);
-            // console.log('this.language: ',this.language);
+            var lineRevInitial = reverse_str(line);
+            var lineRev = lineRevInitial;
+            
+        
             if (LANGUAGES.html.indexOf(this.language) >= 0) {
                 var match = lineRev.match(/^[^="]+"=/);
-                // console.log('lineRev: ',lineRev);
-                // console.log('match: ',match);
+                
+                
                 if (match) {
                     lineRev = lineRev.substr(match[0].length);
                     this.noFixes = true;
                 }
 
                 attr = reverse_str(lineRev.split(" ")[0]);
-                // console.log('attr: ', attr);
+                
                 var last2Char = attr.substr(-2);
                 if (last2Char != '="' && last2Char != "='" && QUOTED_ATTR.indexOf(attr) >= 0) {
                     this.setFixes('="','"');
@@ -362,16 +373,20 @@ define(function () {
                     attr = attr.substr(0,attr.length-2);
                 }
             } else if (LANGUAGES.javascript.indexOf(this.language) >= 0) {
-                // console.log('lineRev: ',lineRev);
                 // substr(2) because we don't want the '(
                 attr = reverse_str(lineRev.split(".")[0].substr(2));
             }
 
-
+            // if the implicitChar is set the first part of lineRev must be the attr (in all HTML files)
+            if (this.implicitChar && LANGUAGES.indexOf(this.language) >= 0) {
+                if (reverse_str(lineRevInitial.substr(0,attr.length)) != attr) {
+                    return false;   
+                }
+            }
+            
             if (attr in ATTR_REDIRECT) {
                 attr = ATTR_REDIRECT[attr];
             }
-            console.log('checkFixes for attr: '+attr);
             this.checkFixes(attr);
 
             return attr;
@@ -387,6 +402,7 @@ define(function () {
             var prefix, suffix;
             
             var langReversed = this.reverseLanguage[this.language];
+            // html has two different suffix systems one for implicitChar and one for explicit
             if (langReversed == "html") {
                 if (!this.implicitChar) {
                     langReversed += "_exp";   
@@ -405,11 +421,12 @@ define(function () {
             } else {
                 suffix = SUFFIXES[langReversed][attr];
             }
-            console.log('checkFixes for: !'+attr+'! => !'+prefix+'! !'+suffix);
 
             this.setFixes(prefix,suffix);
         }
 
+    
+        
         /**
          * Add prefix and suffix
          * @param {String} prefix prefix
@@ -444,7 +461,7 @@ define(function () {
             this.noFixes    = false;
 
             this.implicitChar = implicitChar;
-//            // console.log('this.implicitChar: ',this.implicitChar);
+
 
             if (LANGUAGES.html.indexOf(this.language) >= 0) {
                 this.fileTypes = this.HTML_AND_CSS_LANGUAGES;
@@ -453,7 +470,8 @@ define(function () {
 
                 if (!this.implicitChar || lastChars.indexOf(this.implicitChar) >= 0) {
                     var attr = this.getCurrentAttr();
-                    // console.log('attr: ',attr);
+                    if (!attr) { return false; }
+                    
                     if (attributes.indexOf(attr) >= 0) {
                         this.attr = attr;
                         return true;
@@ -465,7 +483,8 @@ define(function () {
                 if (this.implicitChar == "'" || this.implicitChar == '"') {
                     var attributes = JS_HINT_ATTR;
                     var attr = this.getCurrentAttr();
-                    // console.log('attr: ',attr);
+                    if (!attr) { return false; }
+                    
                     if (attributes.indexOf(attr) >= 0) {
                         this.attr = attr;
                         return true;
@@ -503,8 +522,8 @@ define(function () {
          * @returns {Object} HinterObject
          */
         JQueryHinter.prototype.getHints = function () {
-            // console.log('this.pos:', this.pos);
-            // console.log('this.editor.getCursorPos:', this.editor.getCursorPos());
+            
+            
             if (this.pos.ch > this.editor.getCursorPos().ch) {
                 return false;
             }
@@ -512,27 +531,28 @@ define(function () {
             var result = $.Deferred();
             this.match = this.editor.document.getRange(this.pos, this.editor.getCursorPos());
 
+            /*
             console.log('allHints: ',this.allHints);
             console.log('fileTypesName: ',this.fileTypes[0]);
             console.log('language: ',this.language);
             console.log('attr: ',this.attr);
             console.log('prefixHint: ',this.prefixHint);
             console.log('suffixHint: ',this.suffixHint);
-
+            */
+            
             var allHintsKey = this.attr.toUpperCase();
             if (allHintsKey == "DATA-") {
                 allHintsKey = "DATA";  
             }
             
-            // console.log('getHints');
-            console.time('getHints');
+            
+//            console.time('getHints');
             var defHints = clInst.allHints[allHintsKey];
             defHints = this.getMatchingHints(defHints);
-            console.timeEnd('getHints');
+//            console.timeEnd('getHints');
             if (!defHints || defHints.length == 0) {
                 return false;   
             }
-            console.log('defHints: ',defHints);
             var result = {  hints: defHints,
                             match: this.match,
                             selectInitial: true,
@@ -554,7 +574,6 @@ define(function () {
             var returnHints = [];
             var matchPos;
             var matchWOPrefix = this.removePrefix();
-            console.log('matchWOPrefix: '+matchWOPrefix);
             for (var i = 0; i < hints.length; i++) {
                 cHint = hints[i];
                 
@@ -567,17 +586,32 @@ define(function () {
             return returnHints.getCol(0);
         }
     
+        /**
+         * remove the prefix in this.match
+         * @returns {String} this.match without this.prefixHint
+         */
         JQueryHinter.prototype.removePrefix = function () {
             return this.match.substr(this.prefixHint.length);
         }
         
+        /**
+         * Sorting function 
+         * sort by match (second column)
+         * @param   {Array}  a array of the first comparable
+         * @param   {Array}  b array of the second comparable
+         * @returns {Number} 0 if equal 1 if first is greater, else: -1
+         */
         function byMatch(a,b) {
             var a1= a[1], b1= b[1];
             if(a1== b1) return 0;
             return a1> b1? 1: -1;
         }
         
-        
+        /**
+         * Return all elements in a column
+         * @param   {Number} col number of the column
+         * @returns {Array}  all elements in that column as array
+         */
         Array.prototype.getCol = function (col){
            var column = [];
            for(var i=0; i< this.length; i++){
@@ -613,7 +647,7 @@ define(function () {
                 var startSetCursor, endSetCursor;
                 while (i < this.suffixHint.length) {
                     line = this.editor.document.getLine(start.line+i);
-                    // console.log('line: ',line);
+                    
                     match = line.indexOf('++');
                     if (match >= 0) {
                         startSetCursor = {line: start.line+i, ch: match};
