@@ -111,17 +111,7 @@ define(function () {
             .done(function(files) {
                 clInst.getHintsForFiles(files)
                     .done(function (defHints) {
-                        var hintKeys = Object.keys(defHints);
-                        var hintKey;
-                        var cHints;
-                        for (var i = 0; i < hintKeys.length; i++) {
-                            hintKey = hintKeys[i];
-                            cHints = defHints[hintKey];
-                            cHints = cHints.getUnique();
-                            defHints[hintKey] = cHints;
-                        }
-
-                        clInst.allHints = defHints;
+                        clInst.updateHints(defHints);
                     });
             });
 
@@ -178,15 +168,15 @@ define(function () {
 
             return result.promise();
 
-            function getHintsForFilesRec(index,language) {
+            function getHintsForFilesRec(index) {
                 var resultRec = new $.Deferred();
-                clInst.getHintsForSingleFile(files[index],language)
+                clInst.getHintsForSingleFile(files[index])
                 .done(function(hintsForSingleFile) {
 //                    console.log('hintsForSingleFile: ',hintsForSingleFile);
                     hints = hintExtend(hints,hintsForSingleFile);
 //                    console.log(hints);
                     if (index+1 < files.length) {
-                        getHintsForFilesRec(index+1,hintsForSingleFile)
+                        getHintsForFilesRec(index+1)
                             .done(function() {
                                 resultRec.resolve();
                             });
@@ -206,7 +196,7 @@ define(function () {
          * @param   {Object}        file Brackets file object
          * @returns {DeferredArray} an array with all hints
          */
-        JQueryHinter.prototype.getHintsForSingleFile = function (file,language) {
+        JQueryHinter.prototype.getHintsForSingleFile = function (file) {
             var result = new $.Deferred();
             var hRegex;
             var clInst = this;
@@ -311,6 +301,40 @@ define(function () {
             return a;
         }
 
+        JQueryHinter.prototype.updateFile = function (file) {
+            var clInst = this;
+            var fileExt = file._name.split('.').pop();
+            switch (fileExt) {
+                case "htm":
+                    fileExt = "html";
+                    break;
+            }
+            
+            if (this.READ_FILES.indexOf(fileExt) >= 0) {
+                clInst.getHintsForSingleFile(file)
+                .done(function(hints) {
+                    hints = hintExtend(clInst.allHints,hints);
+                    clInst.updateHints(hints);
+                    console.log('updated: ',clInst.allHints);
+                });
+            }
+        }
+        
+        JQueryHinter.prototype.updateHints = function (hints) {
+            var clInst = this;
+            var hintKeys = Object.keys(hints);
+            var hintKey;
+            var cHints;
+            for (var i = 0; i < hintKeys.length; i++) {
+                hintKey = hintKeys[i];
+                cHints = hints[hintKey];
+                cHints = cHints.getUnique();
+                hints[hintKey] = cHints;
+            }
+
+            clInst.allHints = hints;
+        }
+        
         /**
          * Get the current attribute (before the cursor position)
          * @returns {String} name of the attribute i.e "class" or "id"
@@ -587,7 +611,7 @@ define(function () {
                 var match;
                 var i = 0;
                 var startSetCursor, endSetCursor;
-                while (i < 5) {
+                while (i < this.suffixHint.length) {
                     line = this.editor.document.getLine(start.line+i);
                     // console.log('line: ',line);
                     match = line.indexOf('++');

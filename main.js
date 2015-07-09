@@ -31,13 +31,22 @@ define(function (require, exports, module) {
 
 	var AppInit            	= brackets.getModule("utils/AppInit");
     var CodeHintManager     = brackets.getModule("editor/CodeHintManager");
+    var DocumentManager     = brackets.getModule("document/DocumentManager");
    	
+    var JQueryHinter;
+    var jqueryHinter;
+    
+    function fileSavedHandler($event, listener) {
+        console.log('listener: ',listener.file);
+        jqueryHinter.updateFile(listener.file);
+    }
+    
 	AppInit.appReady(function () {
-        var JQueryHinter = require('hints');
-        console.log('here');
+        JQueryHinter = require('hints');
+    
+		jqueryHinter = new JQueryHinter();
+        $(DocumentManager).on('documentSaved workingSetAdd pathDeleted', fileSavedHandler);
         
-		var jqueryHinter = new JQueryHinter();
-
 		CodeHintManager.registerHintProvider(jqueryHinter, ["javascript", "coffeescript", "livescript", "css", "less", "sass", "scss", "html", "mustache"], 0);
 	});
 
