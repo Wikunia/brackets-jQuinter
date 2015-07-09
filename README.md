@@ -23,9 +23,14 @@ You don't need a second yacht and have some coins to spend? Here I am :)
 [![Flattr this git repo](http://api.flattr.com/button/flattr-badge-large.png)](https://flattr.com/submit/auto?user_id=Wikunia&url=https://github.com/Wikunia/brackets-jQuinter&title=Brackets-jQuinter&language=javascript&tags=github&category=software)
 
 
+## Versions
+
+### v0.2.0
+
++ huge performance improvements
+    + cache all hints at the beginning and on save
+
 ## Next steps
 
 + support more awesome things 
     + please open an issue if you miss something
-+ performance
-    + at the moment the performance is bad because ther is no caching at all
