@@ -378,7 +378,7 @@ define(function () {
             }
 
             // if the implicitChar is set the first part of lineRev must be the attr (in all HTML files)
-            if (this.implicitChar && LANGUAGES.indexOf(this.language) >= 0) {
+            if (this.implicitChar && LANGUAGES.html.indexOf(this.language) >= 0) {
                 if (reverse_str(lineRevInitial.substr(0,attr.length)) != attr) {
                     return false;   
                 }
