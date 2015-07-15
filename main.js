@@ -44,7 +44,7 @@ define(function (require, exports, module) {
         JQueryHinter = require('hints');
     
 		jqueryHinter = new JQueryHinter();
-        $(DocumentManager).on('documentSaved', fileSavedHandler);
+        DocumentManager.on('documentSaved', fileSavedHandler);
         
 		CodeHintManager.registerHintProvider(jqueryHinter, ["javascript", "coffeescript", "livescript", "css", "less", "sass", "scss", "html", "mustache"], 0);
 	});
