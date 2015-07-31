@@ -462,7 +462,8 @@ define(function () {
             this.noFixes    = false;
 
             this.implicitChar = implicitChar;
-
+            
+            
             // HTML Language
             if (LANGUAGES.html.indexOf(this.language) >= 0) {
                 this.fileTypes = this.HTML_AND_CSS_LANGUAGES;

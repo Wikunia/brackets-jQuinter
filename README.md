@@ -25,6 +25,12 @@ You don't need a second yacht and have some coins to spend? Here I am :)
 
 ## Versions
 
+### v0.3.0
+
++ it's possible to correct misspelling without starting from the beginning
++ case insensitive
+
+
 ### v0.2.0
 
 + huge performance improvements
