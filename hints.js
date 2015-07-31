@@ -577,7 +577,7 @@ define(function () {
             for (var i = 0; i < hints.length; i++) {
                 cHint = hints[i];
                 
-                if ((matchPos = cHint.indexOf(matchWOPrefix)) >= 0) {
+                if ((matchPos = cHint.toLowerCase().indexOf(matchWOPrefix.toLowerCase())) >= 0) {
                     returnHints.push([cHint,matchPos]);
                 }
             }
