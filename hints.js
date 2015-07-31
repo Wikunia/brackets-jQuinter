@@ -15,9 +15,11 @@ define(function () {
 
         var REGEX_HTML_CLASS    = / class="([^"]+)"/ig;
         var REGEX_HTML_ID       = / id="([^"]+)"/ig;
-        var REGEX_DATA          = / data-([_a-zA-Z]+[_a-zA-Z0-9-]*)/ig;
-        var REGEX_CSS_CLASS     = /\.(-?[_a-zA-Z]+[_a-zA-Z0-9-]*)/ig;
-        var REGEX_CSS_ID        = /\#(-?[_a-zA-Z]+[_a-zA-Z0-9-]*)/ig;
+        var REGEX_DATA          = / data-([_a-zA-Z]+[_a-zA-Z0-9-]*)/g;
+        var REGEX_CSS_CLASS     = /\.(-?[_a-zA-Z][_a-zA-Z0-9-]*)/g;
+        var REGEX_CSS_ID        = /\#(-?[_a-zA-Z][_a-zA-Z0-9-]*)/g;
+    
+        var REGEX_REVERSE_INSIDE = /^([_a-zA-Z0-9-]*[_a-zA-Z]-?)(\#|\.)?['"]/;
 
         var LANGUAGES           = {'javascript': ["javascript", "coffeescript", "livescript"],
                                    'css': ["css", "less", "sass", "scss"],
@@ -358,7 +360,6 @@ define(function () {
             if (LANGUAGES.html.indexOf(this.language) >= 0) {
                 var match = lineRev.match(/^[^="]+"=/);
                 
-                
                 if (match) {
                     lineRev = lineRev.substr(match[0].length);
                     this.noFixes = true;
@@ -462,7 +463,7 @@ define(function () {
 
             this.implicitChar = implicitChar;
 
-
+            // HTML Language
             if (LANGUAGES.html.indexOf(this.language) >= 0) {
                 this.fileTypes = this.HTML_AND_CSS_LANGUAGES;
                 var attributes = HTML_HINT_ATTR;
@@ -479,7 +480,7 @@ define(function () {
                 }
             } else { // CSS and JS
                 this.fileTypes = LANGUAGES.html;
-
+                
                 if (this.implicitChar == "'" || this.implicitChar == '"') {
                     var attributes = JS_HINT_ATTR;
                     var attr = this.getCurrentAttr();
@@ -496,6 +497,11 @@ define(function () {
                             if (!line.match(REGEX_HASHINT_CSS_CLASS)) {
                                 return false;
                             }
+                        } else { // js
+                            var charBefore = this.editor.document.getRange({line:this.pos.line,ch:this.pos.ch-2},this.pos).charAt(0);
+                            if (charBefore !== '"' && charBefore !== "'") {
+                                return false;
+                            }
                         }
                         this.attr = 'class';
                         this.checkFixes(this.attr);
@@ -505,12 +511,45 @@ define(function () {
                             if (!line.match(REGEX_HASHINT_CSS_ID)) {
                                 return false;
                             }
+                        } else { // js
+                            var charBefore = this.editor.document.getRange({line:this.pos.line,ch:this.pos.ch-2},this.pos).charAt(0);
+                            if (charBefore !== '"' && charBefore !== "'") {
+                                return false;
+                            }
                         }
                         this.attr = 'id';
                         this.checkFixes(this.attr);
                     }
                     return true;
+                } else { // maybe after a typo directly inside i.e a class name
+                    var line = this.editor.document.getRange({line:this.pos.line,ch:0},this.pos);
+                    var lineRev = reverse_str(line);
+                    var match = lineRev.match(REGEX_REVERSE_INSIDE);
+                    if (match) {
+                        this.pos.ch -= match[0].length-2; // one char for '.' or '#' and one for ' or "
+                        if (match[2] == '.') {
+                            this.attr = 'class';
+                        } else if(match[2] == '#') {
+                            this.attr = 'id';  
+                        } else if (!(match[2])) {
+                            // maybe something else like data
+                            this.pos.ch -= 1; // there is neither a '#' nor a '.'
+                            var attributes = JS_HINT_ATTR;
+                            var attr = this.getCurrentAttr();
+                            if (!attr) { return false; }
+                            if (attributes.indexOf(attr) >= 0) {
+                                this.attr = attr;
+                            } else {
+                                return false;   
+                            }
+                        }
+                        this.checkFixes(this.attr);   
+                        
+                        return true;
+                    }
+                    
                 }
+                    
             }
             return false;
         };
@@ -530,8 +569,9 @@ define(function () {
             var clInst = this;
             var result = $.Deferred();
             this.match = this.editor.document.getRange(this.pos, this.editor.getCursorPos());
-
+            
             /*
+            console.log('this.match: ',this.match);
             console.log('allHints: ',this.allHints);
             console.log('fileTypesName: ',this.fileTypes[0]);
             console.log('language: ',this.language);
@@ -550,6 +590,9 @@ define(function () {
             var defHints = clInst.allHints[allHintsKey];
             defHints = this.getMatchingHints(defHints);
 //            console.timeEnd('getHints');
+            
+//            console.log('#hints: ',defHints.length);
+//            console.log('this.attr ',this.attr);
             if (!defHints || defHints.length == 0) {
                 return false;   
             }
@@ -578,6 +621,7 @@ define(function () {
                 cHint = hints[i];
                 
                 if ((matchPos = cHint.toLowerCase().indexOf(matchWOPrefix.toLowerCase())) >= 0) {
+                    
                     returnHints.push([cHint,matchPos]);
                 }
             }

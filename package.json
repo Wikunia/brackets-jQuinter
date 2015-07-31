@@ -3,7 +3,7 @@
     "title": "jQuinter",
     "description": "Get hints for jQuery selectors in JS,HTML and CSS",
     "homepage": "https://github.com/Wikunia/brackets-jQuinter",
-    "version": "0.2.1",
+    "version": "0.3.0",
     "author": "Ole Kröger <o.kroeger@wikunia.de>",
     "license": "MIT License (MIT)",
     "engines": {
