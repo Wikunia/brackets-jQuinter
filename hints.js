@@ -625,7 +625,7 @@ define(function () {
                     returnHints.push([cHint,matchPos]);
                 }
             }
-            returnHints.sort(byMatch);
+            returnHints.sort(byMatch(matchWOPrefix));
             
             return returnHints.getCol(0);
         }
@@ -645,10 +645,18 @@ define(function () {
          * @param   {Array}  b array of the second comparable
          * @returns {Number} 0 if equal 1 if first is greater, else: -1
          */
-        function byMatch(a,b) {
-            var a1= a[1], b1= b[1];
-            if(a1== b1) return 0;
-            return a1> b1? 1: -1;
+        function byMatch(match) {
+            return function(a,b) {
+                var a1= a[1], b1= b[1];
+                if(a1== b1) {
+                    if (a[0].substr(a1).indexOf(match) == 0) {
+                        return -1;   
+                    } else {
+                        return 1;   
+                    }
+                }
+                return a1> b1? 1: -1;
+            }
         }
         
         /**
