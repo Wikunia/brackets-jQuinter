@@ -622,15 +622,26 @@ define(function () {
                 cHint = hints[i];
                 
                 if ((matchPos = cHint.toLowerCase().indexOf(matchWOPrefix.toLowerCase())) >= 0) {
-                    
-                    returnHints.push([cHint,matchPos]);
+                    var sameCases = this.nrOfSameCases(matchPos,cHint,matchWOPrefix);
+                    returnHints.push([cHint,matchPos,sameCases]);
+//                    returnHints.push([cHint,-sameCases,-matchPos]);
                 }
             }
-            returnHints.sort(byMatch(matchWOPrefix));
-            
+            returnHints.sort(this.orderHints());
             return returnHints.getCol(0);
         }
     
+        JQueryHinter.prototype.nrOfSameCases = function(pos,hint,match) {
+            var hint = hint.substr(pos);
+            var c = 0;
+            for (var i = 0; i < match.length; i++) {
+                if (match.charAt(i) === hint.charAt(i)) {
+                    c++;   
+                }
+            }
+            return c;
+        }
+        
         /**
          * remove the prefix in this.match
          * @returns {String} this.match without this.prefixHint
@@ -646,17 +657,16 @@ define(function () {
          * @param   {Array}  b array of the second comparable
          * @returns {Number} 0 if equal 1 if first is greater, else: -1
          */
-        function byMatch(match) {
+        JQueryHinter.prototype.orderHints = function() {
             return function(a,b) {
-                var a1= a[1], b1= b[1];
-                if(a1== b1) {
-                    if (a[0].substr(a1).indexOf(match) == 0) {
+                if(a[1]== b[1]) {
+                    if (a[2] > b[2]) {
                         return -1;   
                     } else {
                         return 1;   
                     }
                 }
-                return a1> b1? 1: -1;
+                return a[1] > b[1] ? 1: -1;
             }
         }
         
