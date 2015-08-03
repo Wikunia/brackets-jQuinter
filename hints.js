@@ -154,6 +154,12 @@ define(function () {
             var index = 0;
             var hints = {};
             
+            // no files at all
+            if (files.length == 0) {
+                result.resolve(hints);   
+                return result.promise();
+            }
+             
             getHintsForFilesRec(index)
                 .done(function() {                
                     result.resolve(hints);
