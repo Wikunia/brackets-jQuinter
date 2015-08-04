@@ -21,7 +21,7 @@ in CSS:
 You don't need a second yacht and have some coins to spend? Here I am :)
 
 [![Flattr this git repo](http://api.flattr.com/button/flattr-badge-large.png)](https://flattr.com/submit/auto?user_id=Wikunia&url=https://github.com/Wikunia/brackets-jQuinter&title=Brackets-jQuinter&language=javascript&tags=github&category=software)
-
+[![Donate! :3](https://www.paypalobjects.com/en_US/GB/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=B5VQXWCZXYN2W)
 
 ## Versions
 
