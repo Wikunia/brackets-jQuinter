@@ -33,16 +33,22 @@ define(function () {
         var PREFIXES            = {'html_imp': {'id': '="','class': '="'}};
         var SUFFIXES            = {'html_imp': {'data-': '="++"'},
                                    'html_exp': {'data-': '="++"'},
-                                   'css': {'id': ' {\n\t++\n}','class': ' {\n\t++\n}'}};
+                                   'css': {'id': ' {\n\t++\n}','class': ' {\n\t++\n}'},
+                                   'javascript': {'on': "', "}
+                                  };
 
         var HTML_HINT_ATTR      = ["id","class","data-"];
-        var JS_HINT_ATTR        = ["id","class","data","hasClass","removeClass","addClass"];
+        var JS_HINT_ATTR        = ["id","class","data","hasClass","removeClass","addClass","on"];
 
         var HTML_HTML_REGEX     = {'class': REGEX_HTML_CLASS, 'id': REGEX_HTML_ID, 'data-': REGEX_DATA};
         var HTML_CSS_REGEX      = {'class': REGEX_CSS_CLASS, 'id': REGEX_CSS_ID};
         var JCSS__REGEX         = {'class': REGEX_HTML_CLASS, 'id': REGEX_HTML_ID, 'data': REGEX_DATA};
 
         var ATTR_REDIRECT       = {'addClass': "class", 'hasClass': "class",'removeClass': "class",'removeData': 'data'};
+    
+        var SPECIAL_ATTR        = {'javascript': {'on': ['change','click','dblclick','focus','focusin','focusout','hover','keydown',
+                                                         'keypress','keyup','mousedown','mouseenter','mouseleave','mousemove','mouseover',
+                                                         'mouseout','mouseup','resize','scroll','select','submit']}};
 
         /**
  	 	 * reverse a string
@@ -395,7 +401,7 @@ define(function () {
                 attr = ATTR_REDIRECT[attr];
             }
             this.checkFixes(attr);
-
+            console.log('attr: ',attr);
             return attr;
         }
 
@@ -575,7 +581,27 @@ define(function () {
             }
             var clInst = this;
             var result = $.Deferred();
+            var defHints; 
             this.match = this.editor.document.getRange(this.pos, this.editor.getCursorPos());
+            
+            // check if attr is inside special attributes like 'on'
+            console.log('this.reverseLanguage: ',this.reverseLanguage);
+            var revLang = this.reverseLanguage[this.language];
+            console.log('revesed language: ',revLang);
+            if (revLang in SPECIAL_ATTR && this.attr in SPECIAL_ATTR[revLang]) {
+                // attr is a special attr
+                console.log('is special');
+                
+                defHints = SPECIAL_ATTR[revLang][this.attr];    
+            } else { // normal 
+                var allHintsKey = this.attr.toUpperCase();
+                if (allHintsKey == "DATA-") {
+                    allHintsKey = "DATA";  
+                }
+
+                defHints = clInst.allHints[allHintsKey];                
+            }
+            
             
             /*
             console.log('this.match: ',this.match);
@@ -586,23 +612,12 @@ define(function () {
             console.log('prefixHint: ',this.prefixHint);
             console.log('suffixHint: ',this.suffixHint);
             */
-            
-            var allHintsKey = this.attr.toUpperCase();
-            if (allHintsKey == "DATA-") {
-                allHintsKey = "DATA";  
-            }
-            
-            
-//            console.time('getHints');
-            var defHints = clInst.allHints[allHintsKey];
+
             defHints = this.getMatchingHints(defHints);
-//            console.timeEnd('getHints');
-            
-//            console.log('#hints: ',defHints.length);
-//            console.log('this.attr ',this.attr);
             if (!defHints || defHints.length == 0) {
                 return false;   
             }
+           
             var result = {  hints: defHints,
                             match: this.match,
                             selectInitial: true,
@@ -658,7 +673,7 @@ define(function () {
         
         /**
          * Sorting function 
-         * sort by match (second column)
+         * sort by match (second column) and then by number of correct cases (lower,upper) (third column)
          * @param   {Array}  a array of the first comparable
          * @param   {Array}  b array of the second comparable
          * @returns {Number} 0 if equal 1 if first is greater, else: -1
