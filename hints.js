@@ -401,7 +401,6 @@ define(function () {
                 attr = ATTR_REDIRECT[attr];
             }
             this.checkFixes(attr);
-            console.log('attr: ',attr);
             return attr;
         }
 
@@ -585,13 +584,9 @@ define(function () {
             this.match = this.editor.document.getRange(this.pos, this.editor.getCursorPos());
             
             // check if attr is inside special attributes like 'on'
-            console.log('this.reverseLanguage: ',this.reverseLanguage);
             var revLang = this.reverseLanguage[this.language];
-            console.log('revesed language: ',revLang);
             if (revLang in SPECIAL_ATTR && this.attr in SPECIAL_ATTR[revLang]) {
                 // attr is a special attr
-                console.log('is special');
-                
                 defHints = SPECIAL_ATTR[revLang][this.attr];    
             } else { // normal 
                 var allHintsKey = this.attr.toUpperCase();
