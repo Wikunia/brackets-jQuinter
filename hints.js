@@ -410,7 +410,7 @@ define(function () {
          * + data-... should add an ="++" as suffix
          * @param {String} attr attribute like 'class' or 'data-'
          */
-        JQueryHinter.prototype.checkFixes = function (attr) {
+        JQueryHinter.prototype.checkFixes = function (attr, line) {
             var prefix, suffix;
             
             var langReversed = this.reverseLanguage[this.language];
@@ -423,6 +423,7 @@ define(function () {
                 }
             }
             
+            
             if (!(langReversed in PREFIXES) || !(attr in PREFIXES[langReversed])) {
                 prefix = '';
             } else {
@@ -434,6 +435,11 @@ define(function () {
                 suffix = SUFFIXES[langReversed][attr];
             }
 
+            // check if suffix must be set
+            if (suffix.indexOf('{') >= 0 && line.indexOf('{') >= 0) {
+                suffix = '';   
+            }
+            
             this.setFixes(prefix,suffix);
         }
 
@@ -503,6 +509,7 @@ define(function () {
                         return true;
                     }
                 } else if (this.implicitChar == '.' || this.implicitChar == '#') {
+                    var line = this.editor.document.getRange({line:this.pos.line,ch:0},this.pos);
                     if (this.implicitChar == '.') {
                         if (LANGUAGES.css.indexOf(this.language) >= 0) {
                             var line = this.editor.document.getLine(this.pos.line);
@@ -516,7 +523,7 @@ define(function () {
                             }
                         }
                         this.attr = 'class';
-                        this.checkFixes(this.attr);
+                        this.checkFixes(this.attr, line);
                     } else if (this.implicitChar == '#') {
                         if (LANGUAGES.css.indexOf(this.language) >= 0) {
                             var line = this.editor.document.getLine(this.pos.line);
@@ -530,7 +537,7 @@ define(function () {
                             }
                         }
                         this.attr = 'id';
-                        this.checkFixes(this.attr);
+                        this.checkFixes(this.attr, line);
                     }
                     return true;
                 } else { // maybe after a typo directly inside i.e a class name
